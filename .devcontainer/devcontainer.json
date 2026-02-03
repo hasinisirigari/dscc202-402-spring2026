@@ -1,4 +1,4 @@
-{
+0{
   "name": "DSAS 2025 - Apache Spark Learning Environment",
   "image": "mcr.microsoft.com/devcontainers/python:3.11-bullseye",
 
