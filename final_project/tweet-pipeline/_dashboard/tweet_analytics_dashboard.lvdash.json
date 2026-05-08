@@ -1,0 +1,472 @@
+{
+  "datasets": [
+    {
+      "name": "da3d8df0",
+      "displayName": "total_tweets",
+      "queryLines": [
+        "SELECT COUNT(*) AS total_tweets FROM workspace.default.tweets_bronze;"
+      ]
+    },
+    {
+      "name": "794eca0d",
+      "displayName": "mention_counts",
+      "queryLines": [
+        "SELECT\n",
+        "  COUNT(*) FILTER (WHERE mention IS NOT NULL) AS with_mentions,\n",
+        "  COUNT(*) FILTER (WHERE mention IS NULL) AS without_mentions\n",
+        "FROM workspace.default.tweets_silver;"
+      ]
+    },
+    {
+      "name": "b35649a4",
+      "displayName": "top_users",
+      "queryLines": [
+        "SELECT user, COUNT(*) AS tweet_count\n",
+        "FROM workspace.default.tweets_bronze\n",
+        "GROUP BY user\n",
+        "ORDER BY tweet_count DESC\n",
+        "LIMIT 10;"
+      ]
+    },
+    {
+      "name": "bd3e4174",
+      "displayName": "mention_sentiment",
+      "queryLines": [
+        "SELECT mention, (positive - negative) AS positive_power\n",
+        "FROM workspace.default.gold_tweet_aggregations\n",
+        "ORDER BY positive_power DESC\n",
+        "LIMIT 10;"
+      ]
+    },
+    {
+      "name": "6911f372",
+      "displayName": "top_negative_mentions",
+      "queryLines": [
+        "SELECT mention, (negative - positive) AS negative_power\n",
+        "FROM workspace.default.gold_tweet_aggregations\n",
+        "ORDER BY negative_power DESC\n",
+        "LIMIT 10;"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "44ee36d4",
+      "displayName": "tweets_dashboard",
+      "layout": [
+        {
+          "widget": {
+            "name": "da782a95",
+            "multilineTextboxSpec": {
+              "lines": [
+                "# <span style=\"text-align:center;display:block\"><span style=\"font-size: 24px;\">Tweet Analysis Dashboard</span></span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "total-tweets",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "da3d8df0",
+                  "fields": [
+                    {
+                      "name": "sum(total_tweets)",
+                      "expression": "SUM(`total_tweets`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Total Tweets"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(total_tweets)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "tweets-with-mentions",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "794eca0d",
+                  "fields": [
+                    {
+                      "name": "sum(with_mentions)",
+                      "expression": "SUM(`with_mentions`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Tweets with Mentions"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(with_mentions)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "tweets-without-mentions",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "794eca0d",
+                  "fields": [
+                    {
+                      "name": "sum(without_mentions)",
+                      "expression": "SUM(`without_mentions`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Tweets without Mentions"
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(without_mentions)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 7,
+            "width": 4,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "top-10-tweeter-tweet-count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b35649a4",
+                  "fields": [
+                    {
+                      "name": "sum(tweet_count)",
+                      "expression": "SUM(`tweet_count`)"
+                    },
+                    {
+                      "name": "user",
+                      "expression": "`user`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Tweeter by Tweet Count"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(tweet_count)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "user",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": false
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 1,
+            "width": 8,
+            "height": 9
+          }
+        },
+        {
+          "widget": {
+            "name": "top-10-positively-mentioned",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "bd3e4174",
+                  "fields": [
+                    {
+                      "name": "sum(positive_power)",
+                      "expression": "SUM(`positive_power`)"
+                    },
+                    {
+                      "name": "mention",
+                      "expression": "`mention`"
+                    }
+                  ],
+                  "disaggregated": false,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "SUM(`positive_power`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Most Positively Mentioned"
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(positive_power)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "mention",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "measure-reversed",
+                      "measure": {
+                        "fieldName": "sum(positive_power)"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "top-10-negatively-mentioned",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "6911f372",
+                  "fields": [
+                    {
+                      "name": "sum(negative_power)",
+                      "expression": "SUM(`negative_power`)"
+                    },
+                    {
+                      "name": "mention",
+                      "expression": "`mention`"
+                    }
+                  ],
+                  "disaggregated": false,
+                  "orders": [
+                    {
+                      "direction": "DESC",
+                      "expression": "SUM(`negative_power`)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Most Negatively Mentioned "
+              },
+              "mark": {
+                "colors": [
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 2
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 3
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 4
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 5
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 6
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 7
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 8
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 9
+                  },
+                  {
+                    "themeColorType": "visualizationColors",
+                    "position": 10
+                  }
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(negative_power)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "mention",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "measure-reversed",
+                      "measure": {
+                        "fieldName": "sum(negative_power)"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 16,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}

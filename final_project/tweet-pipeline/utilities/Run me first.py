@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "5"
+# ///
 # MAGIC %sql
 # MAGIC DROP VOLUME IF EXISTS workspace.default.checkpoints;
 # MAGIC
@@ -15,7 +19,7 @@
 # COMMAND ----------
 
 # Install transformers, torch, and torchvision (required for Hugging Face models)
-%pip install transformers==4.35.2 torch torchvision --quiet
+%pip install transformers==4.35.2 torch torchvision --quiet mlflow==3.8.1
 dbutils.library.restartPython()
 
 # COMMAND ----------

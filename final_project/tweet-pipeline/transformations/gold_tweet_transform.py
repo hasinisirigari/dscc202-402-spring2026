@@ -1,4 +1,9 @@
 # Databricks notebook source
+# MAGIC %pip install transformers==4.35.2 torch --quiet
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC # Gold Layer: ML Inference for Sentiment Prediction
 # MAGIC
@@ -35,7 +40,10 @@
 # - pyspark.pipelines (as dp)
 # - pyspark.sql.types and pyspark.sql.functions
 # - mlflow for model loading
-
+import mlflow
+import pyspark.pipelines as dp
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType
+from pyspark.sql.functions import col, when, lit, round as spark_round
 
 # COMMAND ----------
 
@@ -47,6 +55,10 @@
 # COMMAND ----------
 
 # TODO: Create streaming table definition
+dp.create_streaming_table(
+    name="tweets_gold",
+    comment="Tweet data enriched with DistilBERT sentiment predictions. Includes ground truth and predicted sentiment for model evaluation."
+)
 
 
 # COMMAND ----------
@@ -60,6 +72,7 @@
 # COMMAND ----------
 
 # TODO: Configure MLflow registry
+mlflow.set_registry_uri("databricks-uc")
 
 
 # COMMAND ----------
@@ -74,6 +87,10 @@
 # COMMAND ----------
 
 # TODO: Define model output schema
+model_output_schema = StructType([
+    StructField("label", StringType(),  True),
+    StructField("score", DoubleType(),  True),
+])
 
 
 # COMMAND ----------
@@ -90,7 +107,13 @@
 # COMMAND ----------
 
 # TODO: Load model and create Spark UDF
+MODEL_URI = "models:/workspace.default.small_sentiment_model/1"
 
+predict_udf = mlflow.pyfunc.spark_udf(
+    spark,
+    model_uri=MODEL_URI,
+    result_type=StringType(),
+)
 
 # COMMAND ----------
 
@@ -115,6 +138,44 @@
 # COMMAND ----------
 
 # TODO: Define append_flow function for gold transformation
+@dp.append_flow(target="tweets_gold")
+def gold_transformation_flow():
+    return (
+        spark.readStream.table("workspace.default.tweets_silver")
+        .repartition(2) 
+        .withColumn("prediction", predict_udf(col("cleaned_text")))
+        .withColumn("predicted_label", col("prediction"))  # plain string, not struct
+        .withColumn("predicted_score", lit(-1.0))  # no score available, using label string as placeholder
+        .withColumn(
+            "predicted_sentiment",
+            when(col("predicted_label") == "NEGATIVE", "negative")
+            .when(col("predicted_label") == "POSITIVE", "positive")
+            .otherwise("unknown")
+        )
+        .withColumn(
+            "sentiment_id",
+            when(col("sentiment") == "0", 0)
+            .when(col("sentiment") == "4", 1)
+            .otherwise(-1)
+        )
+        .withColumn(
+            "predicted_sentiment_id",
+            when(col("predicted_sentiment") == "negative", 0)
+            .when(col("predicted_sentiment") == "positive", 1)
+            .otherwise(-1)
+        )
+        .select(
+            "timestamp",
+            "mention",
+            "cleaned_text",
+            "text",
+            "sentiment",
+            "predicted_score",
+            "predicted_sentiment",
+            "sentiment_id",
+            "predicted_sentiment_id"
+        )
+    )
 
 
 # COMMAND ----------

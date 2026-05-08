@@ -41,7 +41,27 @@
 -- COMMAND ----------
 
 -- TODO: Create materialized view with aggregations
+-- COMMAND ----------
 
+-- MAGIC %md
+-- MAGIC # Application Layer: Tweet Sentiment Aggregations
+
+-- COMMAND ----------
+
+CREATE OR REPLACE MATERIALIZED VIEW gold_tweet_aggregations
+COMMENT "Pre-aggregated sentiment counts per mentioned user for dashboard analytics."
+AS
+SELECT
+    mention,
+    COUNT(*) FILTER (WHERE predicted_sentiment = 'positive') AS positive,
+    COUNT(*) FILTER (WHERE predicted_sentiment = 'negative') AS negative,
+    COUNT(*) FILTER (WHERE predicted_sentiment IN ('positive', 'negative')) AS total,
+    MIN(timestamp) AS min_timestamp,
+    MAX(timestamp) AS max_timestamp
+FROM tweets_gold
+WHERE mention IS NOT NULL
+GROUP BY mention
+ORDER BY total DESC
 
 -- COMMAND ----------
 
